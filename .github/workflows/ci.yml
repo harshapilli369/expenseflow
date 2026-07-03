@@ -73,6 +73,10 @@ jobs:
           terraform apply -auto-approve -input=false
       - name: Smoke test deployed API
         working-directory: infra
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
         run: |
           URL=$(terraform output -raw api_base_url)
           echo "Deployed at $URL"
