@@ -99,3 +99,5 @@ lightweight token authorizer, AWS-managed encryption keys, and direct DynamoDB
 reads (DAX cluster creation needs an IAM service role the lab blocks). The two
 required storage solutions — DynamoDB and S3 — are both deployed. See report
 section 9.
+
+<!-- trigger CI -->
