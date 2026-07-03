@@ -47,6 +47,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
           TF_VAR_lab_role_arn: ${{ secrets.LAB_ROLE_ARN }}
+          TF_VAR_notification_email: ${{ secrets.NOTIFICATION_EMAIL }}
         run: |
           terraform init -input=false
           terraform plan -input=false
@@ -66,6 +67,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
           TF_VAR_lab_role_arn: ${{ secrets.LAB_ROLE_ARN }}
+          TF_VAR_notification_email: ${{ secrets.NOTIFICATION_EMAIL }}
         run: |
           terraform init -input=false
           terraform apply -auto-approve -input=false

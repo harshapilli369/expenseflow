@@ -11,9 +11,16 @@ terraform {
     }
   }
 
-  # Learner Lab: local state is simplest (sessions are ephemeral).
-  # Production: use a remote S3 backend + DynamoDB state locking, e.g.
-  #   backend "s3" { bucket = "..." key = "expenseflow/terraform.tfstate" region = "..." dynamodb_table = "..." }
+  # Remote state so local + CI/CD share one state (apply-on-merge works).
+  # State locking uses S3 conditional writes (use_lockfile) — no DynamoDB table needed.
+  # The bucket is bootstrapped out-of-band (chicken-and-egg): it can't manage itself.
+  backend "s3" {
+    bucket       = "expenseflow-tfstate-903826404605"
+    key          = "expenseflow/terraform.tfstate"
+    region       = "us-east-1"
+    encrypt      = true
+    use_lockfile = true
+  }
 }
 
 provider "aws" {
