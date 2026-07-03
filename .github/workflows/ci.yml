@@ -1,0 +1,79 @@
+name: ci-cd
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  AWS_DEFAULT_REGION: us-east-1
+  TF_IN_AUTOMATION: "true"
+
+jobs:
+  test:
+    name: Lint & Unit Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test deps
+        run: pip install pytest pytest-cov boto3
+      - name: Run tests with coverage gate
+        run: pytest --cov=src --cov-report=term-missing --cov-fail-under=70
+
+  plan:
+    name: Terraform Plan (PR)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - name: Configure AWS credentials
+        # Production: OIDC role assumption (no long-lived keys).
+        # Learner Lab: temporary lab credentials injected as short-lived secrets.
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+        run: echo "credentials configured"
+      - name: Terraform Init & Plan
+        working-directory: infra
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+          TF_VAR_lab_role_arn: ${{ secrets.LAB_ROLE_ARN }}
+        run: |
+          terraform init -input=false
+          terraform plan -input=false
+
+  deploy:
+    name: Terraform Apply (main)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - name: Terraform Init & Apply
+        working-directory: infra
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+          TF_VAR_lab_role_arn: ${{ secrets.LAB_ROLE_ARN }}
+        run: |
+          terraform init -input=false
+          terraform apply -auto-approve -input=false
+      - name: Smoke test deployed API
+        working-directory: infra
+        run: |
+          URL=$(terraform output -raw api_base_url)
+          echo "Deployed at $URL"
+          # A 401 without a token proves the authorizer is wired in.
+          code=$(curl -s -o /dev/null -w "%{http_code}" "$URL/expenses")
+          test "$code" = "401" && echo "smoke ok" || (echo "unexpected $code" && exit 1)

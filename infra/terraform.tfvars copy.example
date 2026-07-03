@@ -1,0 +1,7 @@
+# Copy to terraform.tfvars and fill in.
+aws_region         = "us-east-1"
+environment        = "prod"
+# REQUIRED — get it with: aws iam get-role --role-name LabRole --query Role.Arn --output text
+lab_role_arn       = "arn:aws:iam::<ACCOUNT_ID>:role/LabRole"
+notification_email = ""      # optional; confirm the SNS subscription email
+policy_threshold   = "500"

@@ -1,0 +1,14 @@
+# Terraform
+infra/.terraform/
+infra/build/
+*.tfstate
+*.tfstate.*
+terraform.tfvars
+.terraform.lock.hcl
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+# Local test artifacts
+receipt.jpg
